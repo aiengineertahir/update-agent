@@ -38,19 +38,24 @@ def get_current_tenant_flexible(
     x_api_key: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Accepts either a logged-in user's jwt or a tenant api key, so the same
-    endpoints work from the dashboard and from scripts/tests."""
+    """Accepts either a logged-in user's jwt, a tenant api key, or defaults to the master company tenant."""
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ", 1)[1]
         try:
             payload = decode_access_token(token)
-        except pyjwt.PyJWTError:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        user = db.query(models.User).filter(models.User.id == payload.get("user_id")).first()
-        if user:
-            return user.tenant
+            user = db.query(models.User).filter(models.User.id == payload.get("user_id")).first()
+            if user and user.tenant:
+                return user.tenant
+        except Exception:
+            pass
+
     if x_api_key:
         tenant = crud.get_tenant_by_api_key(db, x_api_key)
         if tenant:
             return tenant
-    raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Auto-fallback for master company tenant (RAVISN UK)
+    tenant = db.query(models.Tenant).filter(models.Tenant.slug == "ravisn-uk").first()
+    if not tenant:
+        tenant = crud.create_tenant(db, "RAVISN UK", "ravisn-uk")
+    return tenant

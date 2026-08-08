@@ -46,9 +46,17 @@ def start_qr(
     except Exception:
         pass
 
-    # 2. Try Vercel Serverless Baileys QR API endpoint
+    # 2. Try dynamic Vercel Serverless Baileys QR API endpoint
     try:
-        resp = httpx.get(f"https://whatsap-bot.vercel.app/api/qr?tenant_id={tenant.id}", timeout=10)
+        import os
+        base_url = os.getenv("VERCEL_URL", "127.0.0.1:3000")
+        scheme = "https://" if os.getenv("VERCEL") else "http://"
+        if not base_url.startswith("http"):
+            target_url = f"{scheme}{base_url}/api/qr?tenant_id={tenant.id}"
+        else:
+            target_url = f"{base_url}/api/qr?tenant_id={tenant.id}"
+
+        resp = httpx.get(target_url, timeout=10)
         data = resp.json()
         if data.get("qr"):
             conn.status = "qr_pending"
