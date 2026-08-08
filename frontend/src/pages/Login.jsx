@@ -88,13 +88,6 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="text-sm text-ink-muted mt-6">
-            New to RAVISN?{" "}
-            <Link to="/signup" className="text-accent font-medium hover:underline">
-              Create an account
-            </Link>
-          </p>
-
           <p className="text-xs text-ink-muted mt-4 flex gap-3 flex-wrap">
             <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">
               Privacy Policy
