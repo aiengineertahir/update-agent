@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ravisn_agent
+      POSTGRES_USER: ravisn
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ravisn"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ravisn:${POSTGRES_PASSWORD:-changeme}@db:5432/ravisn_agent
+      WHATSAPP_QR_SERVICE_URL: http://whatsapp-qr-service:3001
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  whatsapp-qr-service:
+    build: ./whatsapp-qr-service
+    env_file: ./whatsapp-qr-service/.env
+    environment:
+      BACKEND_URL: http://backend:8000
+    volumes:
+      - qr_sessions:/app/sessions
+    depends_on:
+      - backend
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+  qr_sessions:
