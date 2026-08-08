@@ -47,6 +47,30 @@ def login(payload: schemas.LoginIn, db: Session = Depends(get_db)):
     return schemas.AuthOut(token=token, tenant=user.tenant, email=user.email)
 
 
+@router.post("/reset-password")
+def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_db)):
+    email = payload.email.strip().lower()
+    new_pwd = payload.new_password.strip()
+    if not email or not new_pwd:
+        raise HTTPException(status_code=400, detail="Email and new password are required")
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        # If master user doesn't exist yet, auto-provision
+        if email == "ravisn.uk@gmail.com":
+            tenant = db.query(models.Tenant).filter(models.Tenant.slug == "ravisn-uk").first()
+            if not tenant:
+                tenant = crud.create_tenant(db, "RAVISN UK", "ravisn-uk")
+            user = crud.create_user(db, tenant.id, email, hash_password(new_pwd))
+        else:
+            raise HTTPException(status_code=404, detail="No account found with this email address")
+    else:
+        user.hashed_password = hash_password(new_pwd)
+        db.commit()
+
+    return {"status": "ok", "message": "Password updated successfully! You can now log in."}
+
+
 @router.get("/me", response_model=schemas.MeOut)
 def me(user: models.User = Depends(get_current_user)):
     return schemas.MeOut(tenant=user.tenant, email=user.email)

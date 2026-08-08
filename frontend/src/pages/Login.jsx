@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
 
 export default function Login() {
   const { login } = useAuth();
@@ -9,6 +10,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -21,6 +30,26 @@ export default function Login() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e) {
+    e.preventDefault();
+    setResetError("");
+    setResetMessage("");
+    setResetLoading(true);
+    try {
+      const res = await api.resetPassword(resetEmail, newPassword);
+      setResetMessage(res.message || "Password updated successfully! You can now log in.");
+      setTimeout(() => {
+        setEmail(resetEmail);
+        setPassword(newPassword);
+        setShowForgotModal(false);
+      }, 1500);
+    } catch (err) {
+      setResetError(err.message);
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -63,9 +92,21 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="password">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium" htmlFor="password">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setShowForgotModal(true);
+                  }}
+                  className="text-xs text-accent hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <input
                 id="password"
                 type="password"
@@ -88,6 +129,13 @@ export default function Login() {
             </button>
           </form>
 
+          <p className="text-sm text-ink-muted mt-6">
+            New to RAVISN?{" "}
+            <Link to="/signup" className="text-accent font-medium hover:underline">
+              Create an account
+            </Link>
+          </p>
+
           <p className="text-xs text-ink-muted mt-4 flex gap-3 flex-wrap">
             <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">
               Privacy Policy
@@ -103,6 +151,65 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h2 className="text-xl font-semibold mb-2">Reset Password</h2>
+            <p className="text-sm text-ink-muted mb-4">
+              Enter your email and a new password to update your login credentials.
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+                  placeholder="you@business.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              {resetError && <p className="text-xs text-red-600">{resetError}</p>}
+              {resetMessage && <p className="text-xs text-green-600 font-medium">{resetMessage}</p>}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="flex-1 py-2 rounded-lg border border-line text-sm font-medium hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="flex-1 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-60"
+                >
+                  {resetLoading ? "Updating…" : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

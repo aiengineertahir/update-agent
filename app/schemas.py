@@ -39,6 +39,11 @@ class LoginIn(BaseModel):
     password: str
 
 
+class ResetPasswordIn(BaseModel):
+    email: str
+    new_password: str
+
+
 class AuthOut(BaseModel):
     token: str
     tenant: TenantBasic

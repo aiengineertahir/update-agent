@@ -46,6 +46,8 @@ async function request(path, options = {}) {
 export const api = {
   signup: (payload) => request("/auth/signup", { method: "POST", body: JSON.stringify(payload) }),
   login: (payload) => request("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
+  resetPassword: (email, new_password) =>
+    request("/auth/reset-password", { method: "POST", body: JSON.stringify({ email, new_password }) }),
   me: () => request("/auth/me"),
   listKnowledge: () => request("/knowledge"),
   addKnowledge: (payload) => request("/knowledge", { method: "POST", body: JSON.stringify(payload) }),
