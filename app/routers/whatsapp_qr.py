@@ -38,11 +38,11 @@ def start_qr(
     conn = _get_or_create_connection(db, tenant.id)
     try:
         result = whatsapp_qr.start_session(tenant.id)
-    except Exception:
-        # Seamless cloud fallback: generate QR code image URL for Vercel deployment
-        timestamp = int(datetime.datetime.utcnow().timestamp())
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=RAVISN-WA-{tenant.id}-{timestamp}"
-        result = {"status": "qr_pending", "qr": qr_url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail="WhatsApp QR service is offline. To scan real WhatsApp Web QR codes with your phone, run whatsapp-qr-service or set WHATSAPP_QR_SERVICE_URL. Alternatively, use 'Whatsapp — official cloud api'.",
+        )
 
     conn.status = result.get("status", "pending")
     db.commit()
@@ -58,11 +58,7 @@ def qr_status(
     try:
         result = whatsapp_qr.get_status(tenant.id)
     except Exception:
-        if conn.status == "connected":
-            result = {"status": "connected", "qr": None}
-        else:
-            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=RAVISN-WA-{tenant.id}"
-            result = {"status": "qr_pending", "qr": qr_url}
+        return schemas.WhatsAppQrStatusOut(status=conn.status, qr=None)
 
     new_status = result.get("status", conn.status)
     if new_status != conn.status:

@@ -7,10 +7,8 @@ const SESSIONS_DIR = path.join(__dirname, "..", "sessions");
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 const INTERNAL_SECRET = process.env.WHATSAPP_QR_INTERNAL_SECRET || "dev-internal-secret";
 
-// Defaults to mock mode on purpose - real mode needs a phone to actually scan
-// the code, which nothing in an automated environment can do. Set
-// WHATSAPP_QR_MOCK=false once you're ready to test with a real phone.
-const MOCK_MODE = process.env.WHATSAPP_QR_MOCK !== "false";
+// Default to real Baileys mode so real WhatsApp Web QR codes (1@...) are generated for phone scanning
+const MOCK_MODE = process.env.WHATSAPP_QR_MOCK === "true";
 
 const sessions = new Map(); // tenantId -> { status, qr, sock? }
 
