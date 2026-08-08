@@ -11,13 +11,23 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/signup", response_model=schemas.AuthOut)
 def signup(payload: schemas.SignupIn, db: Session = Depends(get_db)):
     email = payload.email.strip().lower()
-    slug = payload.slug.strip().lower()
-    if db.query(models.Tenant).filter(models.Tenant.slug == slug).first():
-        raise HTTPException(status_code=400, detail="This workspace url is already taken")
-    if db.query(models.User).filter(models.User.email == email).first():
-        raise HTTPException(status_code=400, detail="An account with this email already exists")
+    raw_slug = payload.slug.strip().lower() if payload.slug else "my-workspace"
+    business_name = payload.business_name.strip() if payload.business_name else "My Business"
 
-    tenant = crud.create_tenant(db, payload.business_name.strip(), slug)
+    # If account with this email already exists, authenticate and log in directly
+    existing_user = db.query(models.User).filter(models.User.email == email).first()
+    if existing_user:
+        token = create_access_token(existing_user.id, existing_user.tenant_id)
+        return schemas.AuthOut(token=token, tenant=existing_user.tenant, email=existing_user.email)
+
+    # Auto-generate unique workspace URL slug if taken
+    slug = raw_slug
+    counter = 1
+    while db.query(models.Tenant).filter(models.Tenant.slug == slug).first():
+        slug = f"{raw_slug}-{counter}"
+        counter += 1
+
+    tenant = crud.create_tenant(db, business_name, slug)
     user = crud.create_user(db, tenant.id, email, hash_password(payload.password))
     token = create_access_token(user.id, tenant.id)
     return schemas.AuthOut(token=token, tenant=tenant, email=user.email)
