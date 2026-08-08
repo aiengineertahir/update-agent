@@ -32,7 +32,13 @@ async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.detail || "Something went wrong. Please try again.");
+    let msg = "Invalid email or password";
+    if (typeof data.detail === "string") {
+      msg = data.detail;
+    } else if (Array.isArray(data.detail) && data.detail[0]?.msg) {
+      msg = data.detail[0].msg;
+    }
+    throw new Error(msg);
   }
   return data;
 }
