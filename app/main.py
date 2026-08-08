@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()  # must run before any app module reads os.getenv() at import time
 
 import os
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -25,22 +25,43 @@ origins = ["*"] if CORS_ORIGINS == "*" else [o.strip() for o in CORS_ORIGINS.spl
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(tenants.router)
-app.include_router(knowledge.router)
-app.include_router(chat.router)
-app.include_router(conversations.router)
-app.include_router(whatsapp_official.router)
-app.include_router(whatsapp_qr.router)
-app.include_router(meta_messaging.router)
-app.include_router(bookings.router)
-app.include_router(settings.router)
-app.include_router(channels.router)
-app.include_router(public_legal.router)
+all_routers = [
+    auth.router, tenants.router, knowledge.router, chat.router,
+    conversations.router, whatsapp_official.router, whatsapp_qr.router,
+    meta_messaging.router, bookings.router, settings.router,
+    channels.router, public_legal.router
+]
+
+for router in all_routers:
+    app.include_router(router)
+
+# Mount all routers under /api prefix for Vercel / serverless routing
+api_router = APIRouter(prefix="/api")
+for router in all_routers:
+    api_router.include_router(router)
+
+
+@api_router.get("/")
+def api_root():
+    return {"status": "ok", "service": "ravisn-agent"}
+
+
+@api_router.get("/health")
+def api_health(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {"status": "ok" if db_ok else "degraded", "database": db_ok}
+
+
+app.include_router(api_router)
 
 
 @app.get("/")

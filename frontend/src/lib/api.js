@@ -1,4 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl !== undefined && envUrl !== null && envUrl.trim() !== "") {
+    return envUrl.trim().replace(/\/$/, "");
+  }
+  if (import.meta.env.PROD) {
+    return "/api";
+  }
+  return "http://localhost:8000";
+};
+
+const API_URL = getBaseUrl();
 const TOKEN_KEY = "ravisn_token";
 
 export function getToken() {
