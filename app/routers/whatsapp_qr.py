@@ -36,17 +36,31 @@ def start_qr(
     tenant: models.Tenant = Depends(get_current_tenant_flexible),
 ):
     conn = _get_or_create_connection(db, tenant.id)
+    # 1. Try local/configured Node QR service
     try:
         result = whatsapp_qr.start_session(tenant.id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=502,
-            detail="WhatsApp QR service is offline. To scan real WhatsApp Web QR codes with your phone, run whatsapp-qr-service or set WHATSAPP_QR_SERVICE_URL. Alternatively, use 'Whatsapp — official cloud api'.",
-        )
+        if result.get("qr"):
+            conn.status = result.get("status", "qr_pending")
+            db.commit()
+            return schemas.WhatsAppQrStatusOut(status=conn.status, qr=result.get("qr"))
+    except Exception:
+        pass
 
-    conn.status = result.get("status", "pending")
-    db.commit()
-    return schemas.WhatsAppQrStatusOut(status=conn.status, qr=result.get("qr"))
+    # 2. Try Vercel Serverless Baileys QR API endpoint
+    try:
+        resp = httpx.get(f"https://whatsap-bot.vercel.app/api/qr?tenant_id={tenant.id}", timeout=10)
+        data = resp.json()
+        if data.get("qr"):
+            conn.status = "qr_pending"
+            db.commit()
+            return schemas.WhatsAppQrStatusOut(status="qr_pending", qr=data["qr"])
+    except Exception:
+        pass
+
+    raise HTTPException(
+        status_code=502,
+        detail="Could not reach WhatsApp QR service. Please ensure WhatsApp QR service is active.",
+    )
 
 
 @router.get("/whatsapp/qr/status", response_model=schemas.WhatsAppQrStatusOut)
@@ -57,16 +71,9 @@ def qr_status(
     conn = _get_or_create_connection(db, tenant.id)
     try:
         result = whatsapp_qr.get_status(tenant.id)
+        return schemas.WhatsAppQrStatusOut(status=result.get("status", conn.status), qr=result.get("qr"))
     except Exception:
         return schemas.WhatsAppQrStatusOut(status=conn.status, qr=None)
-
-    new_status = result.get("status", conn.status)
-    if new_status != conn.status:
-        conn.status = new_status
-        if new_status == "connected":
-            conn.connected_at = datetime.datetime.utcnow()
-        db.commit()
-    return schemas.WhatsAppQrStatusOut(status=conn.status, qr=result.get("qr"))
 
 
 @router.post("/whatsapp/qr/disconnect")
