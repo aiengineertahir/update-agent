@@ -62,6 +62,9 @@ def start_qr(
             conn.status = "qr_pending"
             db.commit()
             return schemas.WhatsAppQrStatusOut(status="qr_pending", qr=data["qr"])
+    except Exception:
+        pass
+
     # 3. Fallback: generate scan-ready QR code image
     conn.status = "qr_pending"
     db.commit()
