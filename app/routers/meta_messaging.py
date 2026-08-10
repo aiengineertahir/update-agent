@@ -94,8 +94,9 @@ async def receive_webhook(request: Request, db: Session = Depends(get_db)):
             if not sender_id:
                 continue
 
-            # meta's webhook doesn't include the sender's name here, unlike whatsapp -
-            # that would need an extra graph api call, skipping for now
+            # Send typing_on indicator immediately so customer sees "Agent is typing..."
+            meta_messaging.send_typing_indicator(connection.access_token, sender_id)
+
             result = pipeline.process_incoming_message(db, connection.tenant, channel, sender_id, None, text)
 
             if channel == "facebook":

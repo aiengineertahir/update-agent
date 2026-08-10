@@ -128,18 +128,29 @@ export default function Settings() {
                 {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-              <Sparkles size={14} className="text-amber-500 flex-shrink-0" />
-              <span>
-                Need a free key? Get a 100% free key from{" "}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-brand font-medium underline hover:text-brand/80"
-                >
-                  Google AI Studio
-                </a>.
+            <p className="text-xs text-slate-500 mt-2 flex flex-col gap-1">
+              <span className="flex items-center gap-1">
+                <Sparkles size={14} className="text-amber-500 flex-shrink-0" />
+                <span>
+                  Get a 100% free API key from{" "}
+                  <a
+                    href="https://console.groq.com/keys"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand font-medium underline hover:text-brand/80"
+                  >
+                    Groq Console (Llama-3.3 70B)
+                  </a>{" "}
+                  or{" "}
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand font-medium underline hover:text-brand/80"
+                  >
+                    Google AI Studio (Gemini 2.0)
+                  </a>.
+                </span>
               </span>
             </p>
           </div>

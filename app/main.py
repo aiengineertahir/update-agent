@@ -24,7 +24,8 @@ origins = ["*"] if CORS_ORIGINS == "*" else [o.strip() for o in CORS_ORIGINS.spl
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://localhost:8000"] if origins == ["*"] else origins,
+    allow_origin_regex=r".*" if origins == ["*"] else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -29,10 +29,16 @@ async function request(path, options = {}) {
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  } catch (err) {
+    throw new Error(`Unable to connect to backend server at ${API_URL}. Please ensure your backend server is running.`);
+  }
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg = "Invalid email or password";
+    let msg = "Request failed";
     if (typeof data.detail === "string") {
       msg = data.detail;
     } else if (Array.isArray(data.detail) && data.detail[0]?.msg) {
@@ -51,7 +57,26 @@ export const api = {
   me: () => request("/auth/me"),
   listKnowledge: () => request("/knowledge"),
   addKnowledge: (payload) => request("/knowledge", { method: "POST", body: JSON.stringify(payload) }),
+  uploadKnowledgeFile: async (formData) => {
+    const token = getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/knowledge/upload`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      let msg = data.detail || "Failed to upload document";
+      if (Array.isArray(data.detail) && data.detail[0]?.msg) msg = data.detail[0].msg;
+      throw new Error(msg);
+    }
+    return data;
+  },
   deleteKnowledge: (id) => request(`/knowledge/${id}`, { method: "DELETE" }),
+  updateKnowledge: (id, payload) => request(`/knowledge/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteAllKnowledge: () => request("/knowledge/all", { method: "DELETE" }),
   connectWhatsAppOfficial: (payload) =>
     request("/whatsapp/official/connect", { method: "POST", body: JSON.stringify(payload) }),
   startWhatsAppQr: () => request("/whatsapp/qr/start", { method: "POST" }),
@@ -68,4 +93,9 @@ export const api = {
   listChannels: () => request("/channels"),
   disconnectChannel: (connectionId) =>
     request(`/channels/${connectionId}/disconnect`, { method: "POST" }),
+  getSystemPrompt: () => request("/settings/system-prompt"),
+  saveSystemPrompt: (system_prompt) =>
+    request("/settings/system-prompt", { method: "POST", body: JSON.stringify({ system_prompt }) }),
+  testSystemPrompt: (system_prompt, message) =>
+    request("/settings/system-prompt/test", { method: "POST", body: JSON.stringify({ system_prompt, message }) }),
 };

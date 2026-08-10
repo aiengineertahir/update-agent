@@ -18,6 +18,7 @@ class Tenant(Base):
     slug = Column(String(100), unique=True, nullable=False)
     api_key = Column(String(64), unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
     is_active = Column(Boolean, default=True)
+    custom_system_prompt = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     knowledge_entries = relationship("KnowledgeEntry", back_populates="tenant", cascade="all, delete-orphan")

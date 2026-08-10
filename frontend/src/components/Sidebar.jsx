@@ -1,4 +1,4 @@
-import { Link2, MessageCircle, Calendar, BookOpen, Settings as SettingsIcon, ShieldCheck, FileText, UserX, ExternalLink, LogOut } from "lucide-react";
+import { Link2, MessageCircle, Calendar, BookOpen, Sliders, Settings as SettingsIcon, ShieldCheck, FileText, UserX, ExternalLink, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { key: "inbox", label: "Inbox", icon: MessageCircle },
   { key: "bookings", label: "Bookings", icon: Calendar },
   { key: "knowledge", label: "Knowledge base", icon: BookOpen },
+  { key: "system-prompt", label: "System Prompt Tuning", icon: Sliders },
   { key: "settings", label: "Settings", icon: SettingsIcon },
   { key: "privacy", label: "Privacy policy", icon: ShieldCheck, href: "/privacy" },
   { key: "terms", label: "Terms & conditions", icon: FileText, href: "/terms" },

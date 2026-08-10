@@ -9,3 +9,6 @@ bcrypt
 httpx
 alembic
 psycopg2-binary
+pypdf
+python-docx
+python-multipart

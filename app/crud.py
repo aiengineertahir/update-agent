@@ -105,6 +105,30 @@ def delete_knowledge(db: Session, tenant_id: str, entry_id: str):
     return False
 
 
+def update_knowledge(db: Session, tenant_id: str, entry_id: str, question: str, answer: str):
+    entry = db.query(models.KnowledgeEntry).filter(
+        models.KnowledgeEntry.tenant_id == tenant_id,
+        models.KnowledgeEntry.id == entry_id,
+        models.KnowledgeEntry.is_active.is_(True),
+    ).first()
+    if entry:
+        entry.question = question
+        entry.answer = answer
+        db.commit()
+        db.refresh(entry)
+        return entry
+    return None
+
+
+def delete_all_knowledge(db: Session, tenant_id: str) -> int:
+    count = db.query(models.KnowledgeEntry).filter(
+        models.KnowledgeEntry.tenant_id == tenant_id,
+        models.KnowledgeEntry.is_active.is_(True),
+    ).update({"is_active": False}, synchronize_session=False)
+    db.commit()
+    return count
+
+
 def get_or_create_conversation(db: Session, tenant_id: str, channel: str, contact_external_id: str, contact_name: str = None):
     convo = db.query(models.Conversation).filter(
         models.Conversation.tenant_id == tenant_id,
@@ -143,3 +167,20 @@ def create_booking(db: Session, tenant_id: str, channel: str, conversation_id: s
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def get_tenant_system_prompt(db: Session, tenant_id: str) -> str:
+    tenant = db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
+    if tenant and tenant.custom_system_prompt:
+        return tenant.custom_system_prompt
+    return ""
+
+
+def update_tenant_system_prompt(db: Session, tenant_id: str, prompt: str) -> str:
+    tenant = db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
+    if tenant:
+        tenant.custom_system_prompt = prompt
+        db.commit()
+        db.refresh(tenant)
+        return tenant.custom_system_prompt or ""
+    return ""

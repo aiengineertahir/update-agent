@@ -15,7 +15,10 @@ def process_incoming_message(db, tenant, channel, contact_external_id, contact_n
 
     kb_entries = crud.get_active_knowledge(db, tenant.id)
 
-    result = agent.generate_reply(tenant.name, kb_entries, history, message_text)
+    result = agent.generate_reply(
+        tenant.name, kb_entries, history, message_text,
+        custom_prompt=getattr(tenant, "custom_system_prompt", "") or ""
+    )
 
     crud.save_message(db, convo.id, "outbound", result["reply"])
 

@@ -5,6 +5,7 @@ import Connect from "../components/Connect";
 import Inbox from "../components/Inbox";
 import Bookings from "../components/Bookings";
 import Settings from "../components/Settings";
+import SystemPromptTuning from "../components/SystemPromptTuning";
 import PrivacyPolicyTab from "../components/PrivacyPolicyTab";
 import TermsConditionsTab from "../components/TermsConditionsTab";
 
@@ -19,6 +20,7 @@ export default function Dashboard() {
         {active === "inbox" && <Inbox />}
         {active === "bookings" && <Bookings />}
         {active === "knowledge" && <KnowledgeBase />}
+        {active === "system-prompt" && <SystemPromptTuning />}
         {active === "settings" && <Settings />}
         {active === "privacy" && <PrivacyPolicyTab />}
         {active === "terms" && <TermsConditionsTab />}

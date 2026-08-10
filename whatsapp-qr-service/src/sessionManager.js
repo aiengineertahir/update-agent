@@ -118,7 +118,17 @@ async function startSessionReal(tenantId, isReconnect = false) {
       const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
       if (!text) continue;
       const sender = msg.key.remoteJid.replace("@s.whatsapp.net", "");
+
+      // Send typing status to customer's phone
+      try {
+        await sock.sendPresenceUpdate("composing", msg.key.remoteJid);
+      } catch (err) {}
+
       await forwardMessage(tenantId, sender, msg.pushName || null, text);
+
+      try {
+        await sock.sendPresenceUpdate("paused", msg.key.remoteJid);
+      } catch (err) {}
     }
   });
 
@@ -148,7 +158,17 @@ async function sendMessage(tenantId, to, body) {
     return;
   }
   const jid = to.includes("@") ? to : `${to}@s.whatsapp.net`;
+  if (entry.sock) {
+    try {
+      await entry.sock.sendPresenceUpdate("composing", jid);
+    } catch (e) {}
+  }
   await entry.sock.sendMessage(jid, { text: body });
+  if (entry.sock) {
+    try {
+      await entry.sock.sendPresenceUpdate("paused", jid);
+    } catch (e) {}
+  }
 }
 
 async function disconnectSession(tenantId) {

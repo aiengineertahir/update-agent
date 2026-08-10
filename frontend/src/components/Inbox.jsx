@@ -29,10 +29,23 @@ export default function Inbox() {
 
   useEffect(() => {
     if (!selected) return;
+
+    // Initial load
     api.listMessages(selected).then(setMessages);
+
+    // Auto-poll every 3 seconds for live message updates
+    const interval = setInterval(() => {
+      api.listMessages(selected).then(setMessages).catch(() => {});
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [selected]);
 
   const activeConvo = conversations.find((c) => c.id === selected);
+
+  // Check if last message is inbound so typing indicator appears while generating output
+  const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+  const isAgentThinking = lastMsg && lastMsg.direction === "inbound";
 
   return (
     <div className="flex flex-col h-screen">
@@ -82,10 +95,19 @@ export default function Inbox() {
         <div className="flex-1 flex flex-col min-w-0">
           {activeConvo ? (
             <>
-              <div className="px-5 py-3 border-b border-line flex-shrink-0">
-                <p className="text-sm font-medium">
-                  {activeConvo.contact_name || activeConvo.contact_external_id}
-                </p>
+              <div className="px-5 py-3 border-b border-line flex-shrink-0 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    {activeConvo.contact_name || activeConvo.contact_external_id}
+                  </p>
+                  <p className="text-xs text-ink-muted">{activeConvo.contact_external_id}</p>
+                </div>
+                {isAgentThinking && (
+                  <div className="flex items-center gap-1.5 text-xs text-accent font-medium bg-accent-soft/40 px-2.5 py-1 rounded-full animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                    AI Agent is typing…
+                  </div>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
                 {messages.map((m) => (
@@ -98,6 +120,16 @@ export default function Inbox() {
                     {m.body}
                   </div>
                 ))}
+                {isAgentThinking && (
+                  <div className="ml-auto max-w-md px-4 py-2.5 rounded-xl text-sm bg-accent/20 text-accent flex items-center gap-1.5 italic">
+                    <span className="text-xs font-medium">AI Agent typing</span>
+                    <span className="flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  </div>
+                )}
               </div>
             </>
           ) : (

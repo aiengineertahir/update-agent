@@ -57,3 +57,21 @@ def send_instagram_message(ig_business_account_id: str, access_token: str, recip
             error_detail = err.response.text
         print(f"[Meta API Error] Failed to send Instagram message: {err} | Detail: {error_detail}")
         return {"error": str(err), "detail": error_detail}
+
+
+def send_typing_indicator(access_token: str, recipient_id: str):
+    if is_mock_mode() or not access_token or access_token == "mock":
+        print(f"[MOCK] meta typing indicator -> typing_on for {recipient_id}")
+        return
+    try:
+        httpx.post(
+            f"{GRAPH_BASE}/me/messages",
+            params={"access_token": access_token},
+            json={
+                "recipient": {"id": recipient_id},
+                "sender_action": "typing_on",
+            },
+            timeout=5,
+        )
+    except Exception as err:
+        print(f"[Meta Typing Warning] {err}")
